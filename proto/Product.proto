@@ -1,0 +1,41 @@
+syntax  ="proto3";
+option go_package="github.com/taivama/golang-training/proto";
+
+package proto;
+
+message Product {
+    string Id = 1;
+    string Name = 2;
+    string Category = 3;
+    int32 Quantity = 4;
+    string CreatedAt = 5;
+    string UpdatedAt = 6;
+}
+
+message AddResponse {
+    string error = 1;
+}
+
+message GetRequest {
+    string Id = 1;
+}
+
+message GetResponse {
+    Product Product = 1;
+    string error = 2;
+}
+
+message SearchRequest {
+    string Name = 1;
+}
+
+message SearchResponse {
+    repeated Product Products = 1;
+    string error = 2;
+}
+
+service ProductService {
+    rpc AddProduct(Product) returns (AddResponse);
+    rpc GetProductById(GetRequest) returns (GetResponse);
+    rpc SearchProducts(SearchRequest) returns (SearchResponse);
+}

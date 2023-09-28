@@ -1,0 +1,44 @@
+syntax  ="proto3";
+option go_package="github.com/taivama/golang-training/proto";
+
+package proto;
+
+message User {
+    string Id = 1;
+    string FirstName = 2;
+    string LastName = 3;
+    int32 Age = 4;
+    string Email = 5;
+    string Password = 6;
+    string ConfirmPassword = 7; 
+    string CreatedAt = 8;
+    string UpdateAt = 9;
+}
+
+message UserResponse {
+    string Id = 1;
+    string CreatedAt = 2;
+    string UpdatedAt = 3;
+}
+
+message RegisterResponse {
+    UserResponse Response = 1;
+    string Error = 2;
+}
+
+message LoginResponse {
+    string TokenId = 1;
+    string Error = 2;
+}
+
+message LogoutResponse {
+    string Error = 1;
+}
+
+message Empty {}
+
+service UserService {
+    rpc Register(User) returns (RegisterResponse);
+    rpc Login(User) returns (LoginResponse);
+    rpc Logout(Empty) returns (LogoutResponse);
+}

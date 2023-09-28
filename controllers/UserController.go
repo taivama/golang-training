@@ -1,48 +1,57 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/taivama/golang-training/entities"
-	"github.com/taivama/golang-training/interfaces"
+	"github.com/taivama/golang-training/proto"
 )
 
 type UserController struct {
-	User interfaces.IUser
+	User proto.UserServiceClient
 }
 
-func InitUserController(u interfaces.IUser) *UserController {
+func InitUserController(u proto.UserServiceClient) *UserController {
 	return &UserController{User: u}
 }
 
 func (uc *UserController) RegisterUser(c *gin.Context) {
-	var user entities.User
+	var user proto.User
 	if err := c.BindJSON(&user); err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := uc.User.Register(&user)
+	result, err := uc.User.Register(context.Background(), &user)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	c.IndentedJSON(http.StatusCreated, result)
+	c.IndentedJSON(http.StatusCreated, result.Response)
 }
 
 func (uc *UserController) Login(c *gin.Context) {
-	var user entities.User
+	var user proto.User
 	if err := c.BindJSON(&user); err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	result := uc.User.Login(&user)
+	result, err := uc.User.Login(context.Background(), &user)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
 	c.IndentedJSON(http.StatusOK, result)
 }
 
 func (uc *UserController) Logout(c *gin.Context) {
-	if err := uc.User.Logout(); err != nil {
-		c.String(http.StatusNotFound, err.Error())
+	result, err := uc.User.Logout(context.Background(), &proto.Empty{})
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	if result.Error != "" {
+		c.String(http.StatusNotFound, result.Error)
 		return
 	}
 	c.IndentedJSON(http.StatusOK, "OK")

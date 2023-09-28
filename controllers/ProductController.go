@@ -1,55 +1,63 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/taivama/golang-training/entities"
-	"github.com/taivama/golang-training/interfaces"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/taivama/golang-training/proto"
 )
 
 type ProductController struct {
-	Product interfaces.IProduct
+	Product proto.ProductServiceClient
 }
 
-func InitProductController(p interfaces.IProduct) *ProductController {
+func InitProductController(p proto.ProductServiceClient) *ProductController {
 	return &ProductController{Product: p}
 }
 
 func (pc *ProductController) AddProduct(c *gin.Context) {
-	var product entities.Product
+	var product proto.Product
 	if err := c.BindJSON(&product); err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := pc.Product.AddProduct(&product); err != nil {
+	result, err := pc.Product.AddProduct(context.Background(), &product)
+	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	if result.Error != "" {
+		c.String(http.StatusBadRequest, result.Error)
 		return
 	}
 	c.IndentedJSON(http.StatusCreated, "Added")
 }
 
 func (pc *ProductController) GetProductById(c *gin.Context) {
-	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+	request := proto.GetRequest{Id: c.Param("id")}
+	result, err := pc.Product.GetProductById(context.Background(), &request)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	p, err := pc.Product.GetProductById(id)
-	if err != nil {
-		c.String(http.StatusNotFound, err.Error())
+	if result.Error != "" {
+		c.String(http.StatusNotFound, result.Error)
 		return
 	}
-	c.IndentedJSON(http.StatusFound, p)
+	c.IndentedJSON(http.StatusFound, result.Product)
 }
 
 func (pc *ProductController) SearchProducts(c *gin.Context) {
-	name := c.Param("name")
-	products, err := pc.Product.SearchProducts(name)
+	request := proto.SearchRequest{Name: c.Param("name")}
+	result, err := pc.Product.SearchProducts(context.Background(), &request)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	c.IndentedJSON(http.StatusFound, products)
+	if result.Error != "" {
+		c.String(http.StatusNotFound, result.Error)
+		return
+	}
+	c.IndentedJSON(http.StatusFound, result.Products)
 }
