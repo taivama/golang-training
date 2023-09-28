@@ -20,3 +20,9 @@ proto:
 .PHONY: docker
 docker:
 	docker build -t golang-training:latest .
+
+.PHONY: certs
+certs:
+	rm -fr certs
+	mkdir certs
+	cd certs; minica -ca-cert ca-cert.pem -ca-key ca-key.pem -domains localhost -ip-addresses 127.0.0.1; cd ..

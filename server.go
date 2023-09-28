@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"github.com/taivama/golang-training/services"
 	"github.com/taivama/golang-training/utils"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func RunServer() {
@@ -37,11 +39,30 @@ func RunServer() {
 	}
 	defer listen.Close()
 
-	s := grpc.NewServer()
+	tlsCredentials, err := LoadServerCredentials()
+	if err != nil {
+		log.Fatalf("cannot load TLS credentials: %s", err.Error())
+	}
+
+	s := grpc.NewServer(
+		grpc.Creds(tlsCredentials),
+	)
 	proto.RegisterUserServiceServer(s, us)
 	proto.RegisterProductServiceServer(s, ps)
 	fmt.Println("Server listening on port tcp 9090")
 	if err := s.Serve(listen); err != nil {
 		log.Fatalf("grpc server failed: %s", err.Error())
 	}
+}
+
+func LoadServerCredentials() (credentials.TransportCredentials, error) {
+	serverCert, err := tls.LoadX509KeyPair("certs/localhost/cert.pem", "certs/localhost/key.pem")
+	if err != nil {
+		return nil, err
+	}
+	config := &tls.Config{
+		Certificates: []tls.Certificate{serverCert},
+		ClientAuth:   tls.NoClientCert,
+	}
+	return credentials.NewTLS(config), nil
 }
